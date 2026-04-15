@@ -1,0 +1,33 @@
+name: CI - Bebio
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checoit del codigo
+        uses: actions/checkout@v4
+
+      - name: Configuracion de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar lint
+        run: npm run lint
+
+      - name: Validar tipos
+        run: npm run typecheck
+
+      - name: validar entorno Expo
+        run: npx expo-doctor
