@@ -84,7 +84,7 @@ export const useAuth = (): UseAuthReturn => {
     try {
       setIsLoading(true);
       await logoutUser();
-    } catch (error) {
+    } catch {
       setError('No se pudo cerrar sesion.');
     } finally {
       setIsLoading(false);
