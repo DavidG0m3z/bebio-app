@@ -30,4 +30,4 @@ jobs:
         run: npm run typecheck
 
       - name: validar entorno Expo
-        run: npx expo doctor
+        run: npx expo-doctor
