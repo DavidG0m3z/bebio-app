@@ -1,3 +1,5 @@
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db, auth } from './config'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -5,7 +7,6 @@ import {
   updateProfile,
   UserCredential
 } from 'firebase/auth';
-import { auth } from './config';
 
 export interface RegisterData {
   parentName: string;
@@ -27,6 +28,13 @@ export const registerUser = async (data: RegisterData): Promise<UserCredential> 
   );
 
   await updateProfile(userCredentials.user, { displayName: data.parentName });
+
+  await setDoc(doc(db, 'users', userCredentials.user.uid), {
+    parentName: data.parentName,
+    email: data.email,
+
+    createdAt: serverTimestamp(),
+  });
 
   return userCredentials;
 
