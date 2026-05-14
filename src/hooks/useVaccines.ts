@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAuth } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
 import {
   getUserVaccines,
   markVaccineAsApplied,
@@ -32,7 +31,7 @@ interface UseVaccinesReturn extends VaccinesState {
   refreshVaccines: () => Promise<void>;
 }
 
-export const useVaccines = (): UseVaccinesReturn => {
+export const useVaccines = (babyId: string | null): UseVaccinesReturn => {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,36 +40,50 @@ export const useVaccines = (): UseVaccinesReturn => {
   const userId = auth.currentUser?.uid;
 
   const loadVaccines = useCallback(async () => {
-    if (!userId) return;
+
+    console.log('🔍 loadVaccines called');
+    console.log('🔍 userId:', userId);
+    console.log('🔍 babyId:', babyId);
+    if (!userId || !babyId) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError(null);
+      console.log('📡 Calling getUserVaccines...');
 
-      const data = await getUserVaccines(userId);
+      const data = await getUserVaccines(userId, babyId);
 
-      if (data.length == 0) {
-        await initializeUserVaccines(userId);
-        const initialized = await getUserVaccines(userId);
+      console.log('📦 Vaccines loaded:', data.length);
+      console.log('📦 First vaccine:', data[0]);
+      if (data.length === 0) {
+        console.log('🆕 Initializing vaccines for baby...');
+
+        await initializeUserVaccines(userId, babyId);
+        const initialized = await getUserVaccines(userId, babyId);
+        console.log('✅ Initialized:', initialized.length);
+
         setVaccines(initialized);
       } else {
         setVaccines(data);
       }
-    } catch (err) {
-      setError('No se cargaron las vacunas.');
+    } catch {
+
+      setError('No se pudieron cargar las vacunas.');
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, babyId]);
 
   useEffect(() => {
+    setVaccines([]);
     loadVaccines();
   }, [loadVaccines]);
 
   const appliedVaccines = vaccines.filter((v) => v.status === 'applied');
-
   const pendingVaccines = vaccines.filter((v) => v.status === 'pending');
-
   const nextVaccine = pendingVaccines.length > 0 ? pendingVaccines[0] : null;
 
   const vaccinesByAge = pendingVaccines.reduce((groups, vaccine) => {
@@ -89,14 +102,14 @@ export const useVaccines = (): UseVaccinesReturn => {
         : 0,
   };
 
+
   const handleMarkAsApplied = async (
     vaccineId: string,
     date: Date
   ): Promise<void> => {
-    if (!userId) return;
-
+    if (!userId || !babyId) return;
     try {
-      await markVaccineAsApplied(userId, vaccineId, date);
+      await markVaccineAsApplied(userId, babyId, vaccineId, date);
       setVaccines((prev) =>
         prev.map((v) =>
           v.id === vaccineId
@@ -105,14 +118,14 @@ export const useVaccines = (): UseVaccinesReturn => {
         )
       );
     } catch {
-      setError('No se puede marcar la vacuna como aplicada.')
+      setError('No se pudo marcar la vacuna como aplicada.');
     }
   };
 
   const handleMarkAsPending = async (vaccineId: string): Promise<void> => {
-    if (!userId) return;
+    if (!userId || !babyId) return;
     try {
-      await markVaccineAsPending(userId, vaccineId);
+      await markVaccineAsPending(userId, babyId, vaccineId);
       setVaccines((prev) =>
         prev.map((v) =>
           v.id === vaccineId
@@ -128,11 +141,11 @@ export const useVaccines = (): UseVaccinesReturn => {
   const handleAddCustomVaccine = async (
     name: string,
     ageLabel: string,
-    scheduledDate: Date | null,  // ← Nuevo parámetro
+    scheduledDate: Date | null,
   ): Promise<void> => {
-    if (!userId) return;
+    if (!userId || !babyId) return;
     try {
-      await addCustomVaccine(userId, name, ageLabel, scheduledDate);
+      await addCustomVaccine(userId, babyId, name, ageLabel, scheduledDate);
       await loadVaccines();
     } catch {
       setError('No se pudo agregar la vacuna.');
@@ -142,25 +155,22 @@ export const useVaccines = (): UseVaccinesReturn => {
   const handleDeleteCustomVaccine = async (
     vaccineId: string
   ): Promise<void> => {
-    if (!userId) return;
+    if (!userId || !babyId) return;
     try {
-      await deleteCustomVaccine(userId, vaccineId);
-      // Eliminamos del estado local directamente
+      await deleteCustomVaccine(userId, babyId, vaccineId);
       setVaccines((prev) => prev.filter((v) => v.id !== vaccineId));
     } catch {
       setError('No se pudo eliminar la vacuna.');
     }
   };
 
-
   const handleScheduleVaccine = async (
     vaccineId: string,
     date: Date
   ): Promise<void> => {
-    if (!userId) return;
+    if (!userId || !babyId) return;
     try {
-      await scheduleVaccine(userId, vaccineId, date);
-      // Actualizamos estado local inmediatamente
+      await scheduleVaccine(userId, babyId, vaccineId, date);
       setVaccines((prev) =>
         prev.map((v) =>
           v.id === vaccineId ? { ...v, scheduledDate: date } : v

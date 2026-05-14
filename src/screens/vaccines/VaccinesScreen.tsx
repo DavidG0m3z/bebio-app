@@ -14,11 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useVaccines } from '../../hooks/useVaccines';
+import { useBabyContext } from '../../context/BabyContext';
 import { Vaccine } from '../../services/firebase/vaccineService';
 import { colors } from '../../constants/theme';
 import DatePickerModal from '../../components/common/DatePickerModal';
 
 export default function VaccinesScreen() {
+  const { activeBaby } = useBabyContext();
+
   const {
     isLoading,
     error,
@@ -31,7 +34,7 @@ export default function VaccinesScreen() {
     handleAddCustomVaccine,
     handleDeleteCustomVaccine,
     handleScheduleVaccine,
-  } = useVaccines();
+  } = useVaccines(activeBaby?.id ?? null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [scheduledDate, setScheduledDate] = useState(new Date());
@@ -101,6 +104,20 @@ export default function VaccinesScreen() {
     );
   };
 
+  if (!activeBaby) {
+    return (
+      <View className="flex-1 items-center justify-center bg-neutral px-8">
+        <Text className="text-4xl mb-4">🍼</Text>
+        <Text className="text-text-primary text-lg font-bold text-center mb-2">
+          No hay bebé activo
+        </Text>
+        <Text className="text-text-secondary text-sm text-center">
+          Ve a tu Perfil y registra un bebé para ver su esquema de vacunación.
+        </Text>
+      </View>
+    );
+  }
+
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-neutral">
@@ -117,13 +134,13 @@ export default function VaccinesScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
-        {/* ── HEADER ── */}
+        {/* ── HEADER — muestra el nombre del bebé activo ── */}
         <View className="px-5 pt-4 pb-2">
           <Text className="text-text-primary text-2xl font-bold">
             Vacunas
           </Text>
           <Text className="text-text-secondary text-sm">
-            Esquema de vacunación de tu bebé
+            Esquema de vacunación de {activeBaby.name}
           </Text>
         </View>
 
@@ -154,11 +171,7 @@ export default function VaccinesScreen() {
         {/* ── BUSCADOR ── */}
         <View className="mx-5 mb-5">
           <View className="flex-row bg-white border border-border rounded-xl px-4 py-3 items-center">
-            <Ionicons
-              name="search-outline"
-              size={18}
-              color={colors.textSecondary}
-            />
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
             <TextInput
               className="flex-1 ml-2 text-text-primary text-sm"
               placeholder="Buscar vacunas..."
@@ -203,15 +216,10 @@ export default function VaccinesScreen() {
                 {nextVaccine.description}
               </Text>
 
-              {/* Selector de fecha programada */}
               <View className="bg-primary-light rounded-xl p-3 mb-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center">
-                    <Ionicons
-                      name="calendar-outline"
-                      size={16}
-                      color={colors.primary}
-                    />
+                    <Ionicons name="calendar-outline" size={16} color={colors.primary} />
                     <Text className="text-primary text-sm font-medium ml-2">
                       Fecha programada:
                     </Text>
@@ -252,9 +260,7 @@ export default function VaccinesScreen() {
                 key={vaccine.id}
                 vaccine={vaccine}
                 onUndo={() => handleMarkAsPending(vaccine.id)}
-                onDelete={
-                  vaccine.isCustom ? () => onDeleteVaccine(vaccine) : undefined
-                }
+                onDelete={vaccine.isCustom ? () => onDeleteVaccine(vaccine) : undefined}
               />
             ))}
           </View>
@@ -284,11 +290,7 @@ export default function VaccinesScreen() {
           className="mx-5 border-2 border-dashed border-primary rounded-2xl py-4 items-center flex-row justify-center"
           onPress={() => setShowAddModal(true)}
         >
-          <Ionicons
-            name="add-circle-outline"
-            size={20}
-            color={colors.primary}
-          />
+          <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
           <Text className="text-primary font-semibold ml-2">
             Agregar vacuna personalizada
           </Text>
@@ -335,8 +337,6 @@ export default function VaccinesScreen() {
         >
           <View className="flex-1 bg-black/50 justify-end">
             <View className="bg-white rounded-t-3xl p-6">
-
-              {/* Handle decorativo */}
               <View className="w-10 h-1 bg-border rounded-full self-center mb-4" />
 
               <Text className="text-text-primary text-lg font-bold mb-5">
@@ -372,11 +372,7 @@ export default function VaccinesScreen() {
                 className="bg-neutral border border-border rounded-xl px-4 py-3 mb-6 flex-row items-center"
                 onPress={() => setShowCustomDatePicker(true)}
               >
-                <Ionicons
-                  name="calendar-outline"
-                  size={16}
-                  color={colors.textSecondary}
-                />
+                <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
                 <Text className="ml-2 text-sm text-text-secondary">
                   {customDate
                     ? customDate.toLocaleDateString('es-CO')
@@ -438,11 +434,7 @@ const VaccineCard = ({ vaccine, onUndo, onDelete }: VaccineCardProps) => (
     </View>
     <View className="flex-row items-center gap-2">
       <TouchableOpacity className="p-2" onPress={onUndo}>
-        <Ionicons
-          name="arrow-undo-outline"
-          size={18}
-          color={colors.textSecondary}
-        />
+        <Ionicons name="arrow-undo-outline" size={18} color={colors.textSecondary} />
       </TouchableOpacity>
       {onDelete && (
         <TouchableOpacity className="p-2" onPress={onDelete}>
@@ -461,13 +453,7 @@ interface AgeGroupProps {
   onDelete: (vaccine: Vaccine) => void;
 }
 
-const AgeGroup = ({
-  ageLabel,
-  vaccines,
-  isExpanded,
-  onToggle,
-  onDelete,
-}: AgeGroupProps) => (
+const AgeGroup = ({ ageLabel, vaccines, isExpanded, onToggle, onDelete }: AgeGroupProps) => (
   <View className="mb-3">
     <TouchableOpacity
       className="flex-row items-center justify-between bg-white rounded-2xl px-4 py-3"
@@ -501,11 +487,7 @@ const AgeGroup = ({
               }`}
           >
             <View className="w-8 h-8 rounded-full border-2 border-border items-center justify-center mr-3">
-              <Ionicons
-                name="time-outline"
-                size={16}
-                color={colors.textDisabled}
-              />
+              <Ionicons name="time-outline" size={16} color={colors.textDisabled} />
             </View>
             <View className="flex-1">
               <Text className="text-text-primary text-sm font-medium">
@@ -516,15 +498,8 @@ const AgeGroup = ({
               </Text>
             </View>
             {vaccine.isCustom && (
-              <TouchableOpacity
-                className="p-2"
-                onPress={() => onDelete(vaccine)}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={colors.error}
-                />
+              <TouchableOpacity className="p-2" onPress={() => onDelete(vaccine)}>
+                <Ionicons name="trash-outline" size={16} color={colors.error} />
               </TouchableOpacity>
             )}
           </View>
