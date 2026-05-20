@@ -84,33 +84,6 @@ export const getUserVaccines = async (
     throw err;
   }
 };
-// export const getUserVaccines = async (
-//   userId: string,
-//   babyId: string
-// ): Promise<Vaccine[]> => {
-//   const snapshot = await getDocs(vaccinesRef(userId, babyId));
-
-//   const vaccines = snapshot.docs.map((doc) => {
-//     const data = doc.data();
-//     return {
-//       id: doc.id,
-//       name: data.name,
-//       ageLabel: data.ageLabel,
-//       ageMonths: data.ageMonths,
-//       description: data.description,
-//       status: data.status as VaccineStatus,
-//       appliedDate: data.appliedDate
-//         ? (data.appliedDate as Timestamp).toDate()
-//         : null,
-//       scheduledDate: data.scheduledDate
-//         ? (data.scheduledDate as Timestamp).toDate()
-//         : null,
-//       isCustom: data.isCustom,
-//     } as Vaccine;
-//   });
-
-//   return vaccines.sort((a, b) => a.ageMonths - b.ageMonths);
-// };
 
 export const scheduleVaccine = async (
   userId: string,
