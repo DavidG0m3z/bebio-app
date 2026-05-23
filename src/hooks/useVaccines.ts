@@ -41,9 +41,6 @@ export const useVaccines = (babyId: string | null): UseVaccinesReturn => {
 
   const loadVaccines = useCallback(async () => {
 
-    console.log('🔍 loadVaccines called');
-    console.log('🔍 userId:', userId);
-    console.log('🔍 babyId:', babyId);
     if (!userId || !babyId) {
       setIsLoading(false);
       return;
@@ -52,18 +49,13 @@ export const useVaccines = (babyId: string | null): UseVaccinesReturn => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('📡 Calling getUserVaccines...');
 
       const data = await getUserVaccines(userId, babyId);
 
-      console.log('📦 Vaccines loaded:', data.length);
-      console.log('📦 First vaccine:', data[0]);
       if (data.length === 0) {
-        console.log('🆕 Initializing vaccines for baby...');
 
         await initializeUserVaccines(userId, babyId);
         const initialized = await getUserVaccines(userId, babyId);
-        console.log('✅ Initialized:', initialized.length);
 
         setVaccines(initialized);
       } else {

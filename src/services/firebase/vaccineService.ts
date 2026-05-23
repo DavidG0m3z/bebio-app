@@ -55,9 +55,7 @@ export const getUserVaccines = async (
   babyId: string
 ): Promise<Vaccine[]> => {
   try {
-    console.log('🔥 Firestore path:', `users/${userId}/babies/${babyId}/vaccines`);
     const snapshot = await getDocs(vaccinesRef(userId, babyId));
-    console.log('🔥 Snapshot size:', snapshot.size);
 
     const vaccines = snapshot.docs.map((doc) => {
       const data = doc.data();
@@ -80,7 +78,6 @@ export const getUserVaccines = async (
 
     return vaccines.sort((a, b) => a.ageMonths - b.ageMonths);
   } catch (err) {
-    console.log('❌ Firestore error:', err);
     throw err;
   }
 };
