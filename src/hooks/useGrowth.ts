@@ -89,12 +89,9 @@ export const useGrowth = (
   const enrichRecords = useCallback((
     rawRecords: GrowthRecord[]
   ): GrowthRecordWithPercentile[] => {
-    console.log('🍼 birthDate:', birthDate);
-    console.log('👤 gender:', gender);
 
     return rawRecords.map((record) => {
       const ageInMonths = getAgeInMonths(record.date);
-      console.log('📅 record.date:', record.date, '→ ageInMonths:', ageInMonths);
 
       return {
         ...record,
@@ -165,11 +162,7 @@ export const useGrowth = (
 
 
     try {
-
-
       const created = await addGrowthRecord(userId, babyId, record);
-      console.log('✅ Registro guardado:', created);
-
       const enriched = enrichRecords([created])[0];
       setRecords((prev) =>
         [...prev, enriched].sort((a, b) => a.date.getTime() - b.date.getTime())
