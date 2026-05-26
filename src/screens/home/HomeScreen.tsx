@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,9 +15,9 @@ import { useVaccines } from '../../hooks/useVaccines';
 import { useGrowth } from '../../hooks/useGrowth';
 import { colors } from '../../constants/theme';
 import { AppTabParamList } from '../../navigation/AppNavigator';
+import AIChatScreen from './IAChatScreen';
 
 type HomeNavigationProp = BottomTabNavigationProp<AppTabParamList>;
-
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
@@ -34,6 +33,10 @@ export default function HomeScreen() {
   );
 
   const [aiQuery, setAiQuery] = useState('');
+
+  // Estado del chat IA
+  const [showChat, setShowChat] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState('');
 
   const getGreeting = (): string => {
     const hour = new Date().getHours();
@@ -54,10 +57,12 @@ export default function HomeScreen() {
     return `Hace ${days} días`;
   };
 
+  // Abre el chat con la pregunta del input como primer mensaje
   const onAiQuery = () => {
     if (!aiQuery.trim()) return;
-    Alert.alert('Próximamente', 'El módulo de IA estará disponible pronto.');
+    setChatInitialMessage(aiQuery.trim());
     setAiQuery('');
+    setShowChat(true);
   };
 
   if (!activeBaby) {
@@ -106,8 +111,6 @@ export default function HomeScreen() {
           <Text className="text-text-primary text-2xl font-bold">
             {activeBaby.name}
           </Text>
-
-          {/* Chip de edad */}
           <View className="flex-row items-center mt-2">
             <View className="bg-primary-light px-3 py-1 rounded-full flex-row items-center">
               <Text className="text-primary text-xs font-semibold mr-1">
@@ -122,7 +125,6 @@ export default function HomeScreen() {
 
         {/* ── CARDS RESUMEN ── */}
         <View className="flex-row mx-5 mb-5 gap-3">
-          {/* Card Vacunas */}
           <TouchableOpacity
             className="flex-1 bg-white rounded-2xl p-4"
             onPress={() => navigation.navigate('Vaccines')}
@@ -137,7 +139,6 @@ export default function HomeScreen() {
             <Text className="text-text-secondary text-xs">
               de {vaccineProgress.total} vacunas
             </Text>
-            {/* Mini barra de progreso */}
             <View className="bg-blue-100 rounded-full h-1.5 mt-2">
               <View
                 className="bg-blue-400 rounded-full h-1.5"
@@ -146,7 +147,6 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Card Crecimiento */}
           <TouchableOpacity
             className="flex-1 bg-white rounded-2xl p-4"
             onPress={() => navigation.navigate('Growth')}
@@ -262,7 +262,6 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Input de consulta */}
             <View className="flex-row items-center bg-neutral border border-border rounded-xl px-3 py-2">
               <TextInput
                 className="flex-1 text-text-primary text-sm"
@@ -287,14 +286,16 @@ export default function HomeScreen() {
                 />
               </TouchableOpacity>
             </View>
-
-            <Text className="text-text-disabled text-xs text-center mt-3">
-              Próximamente — IA con contexto completo del bebé
-            </Text>
           </View>
         </View>
-
       </ScrollView>
+
+      {/* ── MODAL CHAT IA ── */}
+      <AIChatScreen
+        visible={showChat}
+        initialMessage={chatInitialMessage}
+        onClose={() => setShowChat(false)}
+      />
     </SafeAreaView>
   );
 }
