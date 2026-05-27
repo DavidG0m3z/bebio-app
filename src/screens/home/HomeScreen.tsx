@@ -1,27 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { getAuth } from 'firebase/auth';
 import { useBabyContext } from '../../context/BabyContext';
 import { useVaccines } from '../../hooks/useVaccines';
 import { useGrowth } from '../../hooks/useGrowth';
 import { colors } from '../../constants/theme';
 import { AppTabParamList } from '../../navigation/AppNavigator';
 import AIChatScreen from './IAChatScreen';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 type HomeNavigationProp = BottomTabNavigationProp<AppTabParamList>;
+
+const fetchDailyTip = async (
+  babyName: string,
+  ageInMonths: number,
+  gender: string
+): Promise<string> => {
+  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+
+  const genderLabel = gender === 'male' ? 'niño' : 'niña';
+  const prompt = `Genera UN tip corto y útil (máximo 2 oraciones) sobre el desarrollo infantil para los padres de ${babyName}, un ${genderLabel} de ${ageInMonths} meses. 
+El tip debe ser específico para esa edad, práctico y positivo. 
+No uses markdown, asteriscos ni emojis al inicio. Solo el texto del tip.`;
+
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+};
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNavigationProp>();
   const { activeBaby, getAgeInMonths } = useBabyContext();
+  const auth = getAuth();
+
+  const parentName = auth.currentUser?.displayName ?? 'Papá/Mamá';
+  const firstName = parentName.split(' ')[0];
 
   const { nextVaccine, progress: vaccineProgress } = useVaccines(
     activeBaby?.id ?? null
@@ -33,10 +58,33 @@ export default function HomeScreen() {
   );
 
   const [aiQuery, setAiQuery] = useState('');
-
-  // Estado del chat IA
   const [showChat, setShowChat] = useState(false);
   const [chatInitialMessage, setChatInitialMessage] = useState('');
+
+  const [dailyTip, setDailyTip] = useState<string | null>(null);
+  const [tipLoading, setTipLoading] = useState(false);
+
+  useEffect(() => {
+    if (!activeBaby) return;
+    loadDailyTip();
+  }, [activeBaby?.id]);
+
+  const loadDailyTip = async () => {
+    if (!activeBaby) return;
+    try {
+      setTipLoading(true);
+      const tip = await fetchDailyTip(
+        activeBaby.name,
+        getAgeInMonths(activeBaby),
+        activeBaby.gender
+      );
+      setDailyTip(tip);
+    } catch {
+      setDailyTip('Hablar con tu bebé frecuentemente estimula su desarrollo del lenguaje desde los primeros meses.');
+    } finally {
+      setTipLoading(false);
+    }
+  };
 
   const getGreeting = (): string => {
     const hour = new Date().getHours();
@@ -57,7 +105,6 @@ export default function HomeScreen() {
     return `Hace ${days} días`;
   };
 
-  // Abre el chat con la pregunta del input como primer mensaje
   const onAiQuery = () => {
     if (!aiQuery.trim()) return;
     setChatInitialMessage(aiQuery.trim());
@@ -105,12 +152,15 @@ export default function HomeScreen() {
       >
         {/* ── HEADER ── */}
         <View className="px-5 pt-4 pb-5">
+          {/* Saludo con nombre del padre */}
           <Text className="text-text-secondary text-sm">
-            {getGreeting()} 👋
+            {getGreeting()}, {firstName} 👋
           </Text>
+          {/* Nombre del bebé como título principal */}
           <Text className="text-text-primary text-2xl font-bold">
             {activeBaby.name}
           </Text>
+          {/* Chip con género y edad del bebé */}
           <View className="flex-row items-center mt-2">
             <View className="bg-primary-light px-3 py-1 rounded-full flex-row items-center">
               <Text className="text-primary text-xs font-semibold mr-1">
@@ -167,6 +217,52 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* ── TIP DEL DÍA ── */}
+        <View className="mx-5 mb-5">
+          <Text className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-3">
+            Tip del día
+          </Text>
+          <View className="bg-white rounded-2xl p-4">
+            <View className="flex-row items-center mb-3">
+              <View className="w-8 h-8 rounded-full bg-yellow-100 items-center justify-center mr-2">
+                <Ionicons name="bulb-outline" size={16} color="#F59E0B" />
+              </View>
+              <Text className="text-text-primary font-semibold text-sm">
+                Para {activeBaby.name} — {getAgeLabel()}
+              </Text>
+            </View>
+
+            {tipLoading ? (
+              <View className="flex-row items-center gap-2 py-2">
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text className="text-text-secondary text-sm">
+                  Generando tip personalizado...
+                </Text>
+              </View>
+            ) : (
+              <View>
+                <Text className="text-text-secondary text-sm leading-5">
+                  {dailyTip}
+                </Text>
+                {/* Botón para regenerar el tip */}
+                <TouchableOpacity
+                  className="self-end mt-3 flex-row items-center gap-1"
+                  onPress={loadDailyTip}
+                >
+                  <Ionicons
+                    name="refresh-outline"
+                    size={14}
+                    color={colors.primary}
+                  />
+                  <Text className="text-primary text-xs font-medium">
+                    Nuevo tip
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+
         {/* ── PRÓXIMA VACUNA ── */}
         {nextVaccine && (
           <View className="mx-5 mb-5">
@@ -201,7 +297,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── ÚLTIMO REGISTRO DE CRECIMIENTO ── */}
+        {/* ── ÚLTIMO REGISTRO ── */}
         {lastRecord && (
           <View className="mx-5 mb-5">
             <Text className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-3">
