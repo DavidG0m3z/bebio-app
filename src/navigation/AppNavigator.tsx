@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth } from '../services/firebase/config';
 import { BabyProvider } from '../context/BabyContext';
 
@@ -38,70 +39,65 @@ const AuthNavigator = () => (
   </AuthStack.Navigator>
 );
 
-const AppNavigatorTabs = () => (
-  // BabyProvider aquí garantiza que userId ya existe
-  // cuando el Context intenta cargar los bebés desde Firestore.
-  // Si estuviera en App.tsx, se montaría antes de la autenticación
-  // y userId sería undefined causando loading infinito.
-  <BabyProvider>
-    <AppTab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-            Home: focused ? 'home' : 'home-outline',
-            Vaccines: focused ? 'medkit' : 'medkit-outline',
-            Growth: focused ? 'stats-chart' : 'stats-chart-outline',
-            Profile: focused ? 'person' : 'person-outline',
-          };
+const AppNavigatorTabs = () => {
+  const insets = useSafeAreaInsets();
 
-          return (
-            <Ionicons
-              name={icons[route.name]}
-              size={size}
-              color={color}
-            />
-          );
-        },
-        tabBarActiveTintColor: '#7BC9FF',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#E5E7EB',
-          borderTopWidth: 1,
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 65,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-        },
-      })}
-    >
-      <AppTab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: 'Inicio' }}
-      />
-      <AppTab.Screen
-        name="Vaccines"
-        component={VaccinesScreen}
-        options={{ tabBarLabel: 'Vacunas' }}
-      />
-      <AppTab.Screen
-        name="Growth"
-        component={GrowthScreen}
-        options={{ tabBarLabel: 'Crecimiento' }}
-      />
-      <AppTab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ tabBarLabel: 'Perfil' }}
-      />
-    </AppTab.Navigator>
-  </BabyProvider>
-);
+  return (
+    <BabyProvider>
+      <AppTab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => {
+            const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+              Home: focused ? 'home' : 'home-outline',
+              Vaccines: focused ? 'medkit' : 'medkit-outline',
+              Growth: focused ? 'stats-chart' : 'stats-chart-outline',
+              Profile: focused ? 'person' : 'person-outline',
+            };
+            return (
+              <Ionicons name={icons[route.name]} size={size} color={color} />
+            );
+          },
+          tabBarActiveTintColor: '#7BC9FF',
+          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopColor: '#E5E7EB',
+            borderTopWidth: 1,
+            paddingTop: 8,
+            paddingBottom: 8 + insets.bottom,
+            height: 65 + insets.bottom,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '500',
+          },
+        })}
+      >
+        <AppTab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ tabBarLabel: 'Inicio' }}
+        />
+        <AppTab.Screen
+          name="Vaccines"
+          component={VaccinesScreen}
+          options={{ tabBarLabel: 'Vacunas' }}
+        />
+        <AppTab.Screen
+          name="Growth"
+          component={GrowthScreen}
+          options={{ tabBarLabel: 'Crecimiento' }}
+        />
+        <AppTab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ tabBarLabel: 'Perfil' }}
+        />
+      </AppTab.Navigator>
+    </BabyProvider>
+  );
+};
 
 export default function AppNavigator() {
   const [user, setUser] = useState<User | null>(null);
