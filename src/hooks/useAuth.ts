@@ -5,7 +5,8 @@ import {
   loginUser,
   logoutUser,
   RegisterData,
-  LoginData
+  LoginData,
+  resetPassword
 } from "../services/firebase/authService";
 
 interface AuthState {
@@ -17,6 +18,8 @@ interface UseAuthReturn extends AuthState {
   handleRegister: (data: RegisterData) => Promise<boolean>;
   handleLogin: (data: LoginData) => Promise<boolean>;
   handleLogout: () => Promise<void>;
+  handleForgotPassword: (email: string) => Promise<boolean>;
+
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -91,11 +94,30 @@ export const useAuth = (): UseAuthReturn => {
     }
   };
 
+  const handleForgotPassword = async (email: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await resetPassword(email);
+      return true;
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        setError(getErrorMessage(err));
+      } else {
+        setError('Ocurrió un error inesperado.');
+      }
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
     handleRegister,
     handleLogin,
     handleLogout,
+    handleForgotPassword,
   };
 };

@@ -3,6 +3,7 @@ import { db, auth } from './config'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   updateProfile,
   UserCredential
@@ -46,4 +47,8 @@ export const loginUser = async (data: LoginData): Promise<UserCredential> => {
 
 export const logoutUser = async (): Promise<void> => {
   return await signOut(auth);
+};
+
+export const resetPassword = async (email: string): Promise<void> => {
+  await sendPasswordResetEmail(auth, email);
 };
