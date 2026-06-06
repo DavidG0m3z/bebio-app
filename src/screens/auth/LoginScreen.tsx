@@ -15,6 +15,8 @@ import { useNavigation } from '@react-navigation/native';
 import { AuthStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../hooks/useAuth';
 import { Image } from 'react-native';
+import logo from '../../../assets/loginLetrasV3.png';
+
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -74,7 +76,8 @@ export default function LoginScreen() {
         <View className="flex-1 px-6 pt-10 items-center">
 
           <Image
-            source={require('../../../assets/loginLetrasV3.png')}
+            source={logo}
+            // source={require('../../../assets/loginLetrasV3.png')}
             style={{ width: 450, height: 350, marginBottom: 1 }}
             resizeMode="contain"
           />
