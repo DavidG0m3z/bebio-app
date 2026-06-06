@@ -19,14 +19,16 @@ import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../constants/theme';
 import DatePickerModal from '../../components/common/DatePickerModal';
 
-// Color dinámico según género del bebé activo
-// Rosa para niña, azul (primary) para niño
 const getGenderColor = (gender: string | undefined): string => {
   return gender === 'female' ? '#F472B6' : colors.primary;
 };
 
 const getGenderLightColor = (gender: string | undefined): string => {
   return gender === 'female' ? '#FCE7F3' : colors.primaryLight;
+};
+
+const getBabyIcon = (gender: string): keyof typeof Ionicons.glyphMap => {
+  return gender === 'female' ? 'person' : 'person';
 };
 
 export default function ProfileScreen() {
@@ -37,7 +39,6 @@ export default function ProfileScreen() {
   const auth = getAuth();
   const user = auth.currentUser;
 
-  // Color activo según género del bebé activo
   const accentColor = getGenderColor(activeBaby?.gender);
   const accentLightColor = getGenderLightColor(activeBaby?.gender);
 
@@ -131,7 +132,6 @@ export default function ProfileScreen() {
         {/* ── TARJETA DEL PADRE ── */}
         <View className="mx-5 mb-6 bg-white rounded-2xl p-5">
           <View className="flex-row items-center">
-            {/* Avatar con color dinámico según género del bebé activo */}
             <View
               style={{ backgroundColor: accentColor }}
               className="w-16 h-16 rounded-full items-center justify-center mr-4"
@@ -162,10 +162,7 @@ export default function ProfileScreen() {
               onPress={() => setShowAddModal(true)}
             >
               <Ionicons name="add-circle-outline" size={18} color={accentColor} />
-              <Text
-                style={{ color: accentColor }}
-                className="text-sm font-semibold ml-1"
-              >
+              <Text style={{ color: accentColor }} className="text-sm font-semibold ml-1">
                 Agregar
               </Text>
             </TouchableOpacity>
@@ -182,7 +179,12 @@ export default function ProfileScreen() {
               className="bg-white border-2 border-dashed rounded-2xl p-6 items-center"
               onPress={() => setShowAddModal(true)}
             >
-              <Text className="text-4xl mb-2">🍼</Text>
+              <View
+                style={{ backgroundColor: accentLightColor }}
+                className="w-16 h-16 rounded-full items-center justify-center mb-3"
+              >
+                <Ionicons name="happy-outline" size={32} color={accentColor} />
+              </View>
               <Text className="text-text-primary font-semibold text-base mb-1">
                 ¡Agrega a tu bebé!
               </Text>
@@ -311,12 +313,18 @@ export default function ProfileScreen() {
                     ? { backgroundColor: colors.primary, borderColor: colors.primary }
                     : { backgroundColor: '#FFFFFF', borderColor: colors.border }
                   }
-                  className="flex-1 rounded-xl py-3 items-center border-2"
+                  className="flex-1 rounded-xl py-4 items-center border-2"
                   onPress={() => setBabyGender('male')}
                 >
-                  <Text className="text-xl mb-1">👦</Text>
-                  <Text style={{ color: babyGender === 'male' ? '#FFFFFF' : colors.textSecondary }}
-                    className="text-sm font-semibold">
+                  <Ionicons
+                    name="male"
+                    size={24}
+                    color={babyGender === 'male' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text
+                    style={{ color: babyGender === 'male' ? '#FFFFFF' : colors.textSecondary }}
+                    className="text-sm font-semibold mt-1"
+                  >
                     Niño
                   </Text>
                 </TouchableOpacity>
@@ -326,12 +334,18 @@ export default function ProfileScreen() {
                     ? { backgroundColor: '#F472B6', borderColor: '#F472B6' }
                     : { backgroundColor: '#FFFFFF', borderColor: colors.border }
                   }
-                  className="flex-1 rounded-xl py-3 items-center border-2"
+                  className="flex-1 rounded-xl py-4 items-center border-2"
                   onPress={() => setBabyGender('female')}
                 >
-                  <Text className="text-xl mb-1">👧</Text>
-                  <Text style={{ color: babyGender === 'female' ? '#FFFFFF' : colors.textSecondary }}
-                    className="text-sm font-semibold">
+                  <Ionicons
+                    name="female"
+                    size={24}
+                    color={babyGender === 'female' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text
+                    style={{ color: babyGender === 'female' ? '#FFFFFF' : colors.textSecondary }}
+                    className="text-sm font-semibold mt-1"
+                  >
                     Niña
                   </Text>
                 </TouchableOpacity>
@@ -409,9 +423,11 @@ const BabyCard = ({
       style={{ backgroundColor: isActive ? accentColor : accentLightColor }}
       className="w-12 h-12 rounded-full items-center justify-center mr-3"
     >
-      <Text className="text-2xl">
-        {baby.gender === 'male' ? '👦' : '👧'}
-      </Text>
+      <Ionicons
+        name={baby.gender === 'female' ? 'female' : 'male'}
+        size={22}
+        color={isActive ? '#FFFFFF' : accentColor}
+      />
     </View>
 
     <View className="flex-1">
@@ -473,7 +489,6 @@ const SettingsRow = ({
       <Text className="text-text-primary text-sm font-semibold">{label}</Text>
       <Text className="text-text-secondary text-xs">{sublabel}</Text>
     </View>
-    {/* Badge "Próximamente" en lugar de la flecha */}
     {comingSoon ? (
       <View className="bg-neutral border border-border px-2 py-0.5 rounded-full">
         <Text className="text-text-disabled text-xs font-medium">

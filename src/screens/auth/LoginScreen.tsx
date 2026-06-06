@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { AuthStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../hooks/useAuth';
+import { Image } from 'react-native';
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -24,7 +25,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Estado del modal de olvidé mi contraseña
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
@@ -67,22 +67,17 @@ export default function LoginScreen() {
       <ScrollView
         className="flex-1 bg-neutral"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
       >
-        <View className="flex-1 px-6 justify-center items-center">
+        <View className="flex-1 px-6 pt-10 items-center">
 
-          {/* ── LOGO ── */}
-          <View className="w-24 h-24 rounded-full bg-primary mb-6 items-center justify-center">
-            <Text className="text-5xl">🍼</Text>
-          </View>
-
-          {/* ── TÍTULOS ── */}
-          <Text className="text-text-primary text-3xl font-bold mb-1">
-            Bebio
-          </Text>
-          <Text className="text-text-secondary text-base mb-10">
-            Bienvenido de nuevo
-          </Text>
+          <Image
+            source={require('../../../assets/loginLetrasV3.png')}
+            style={{ width: 450, height: 350, marginBottom: 1 }}
+            resizeMode="contain"
+          />
 
           {/* ── FORMULARIO ── */}
           <View className="w-full">
@@ -152,14 +147,14 @@ export default function LoginScreen() {
             </View>
 
             {/* ── BOTONES SOCIALES (decorativos) ── */}
-            <View className="flex-row gap-3 mb-8">
+            {/* <View className="flex-row gap-3 mb-8">
               <TouchableOpacity className="flex-1 border border-border rounded-xl py-3 items-center bg-white">
                 <Text className="text-text-primary font-medium text-sm">🌐 Google</Text>
               </TouchableOpacity>
               <TouchableOpacity className="flex-1 border border-border rounded-xl py-3 items-center bg-white">
                 <Text className="text-text-primary font-medium text-sm">🍎 Apple</Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* ── LINK REGISTRO ── */}
             <View className="flex-row justify-center">
