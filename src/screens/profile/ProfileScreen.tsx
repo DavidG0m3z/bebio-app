@@ -19,6 +19,18 @@ import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../constants/theme';
 import DatePickerModal from '../../components/common/DatePickerModal';
 
+const getGenderColor = (gender: string | undefined): string => {
+  return gender === 'female' ? '#F472B6' : colors.primary;
+};
+
+const getGenderLightColor = (gender: string | undefined): string => {
+  return gender === 'female' ? '#FCE7F3' : colors.primaryLight;
+};
+
+const getBabyIcon = (gender: string): keyof typeof Ionicons.glyphMap => {
+  return gender === 'female' ? 'person' : 'person';
+};
+
 export default function ProfileScreen() {
   const { babies, activeBaby, isLoading, error, setActiveBaby, addBaby, deleteBaby } =
     useBabyContext();
@@ -27,6 +39,9 @@ export default function ProfileScreen() {
   const auth = getAuth();
   const user = auth.currentUser;
 
+  const accentColor = getGenderColor(activeBaby?.gender);
+  const accentLightColor = getGenderLightColor(activeBaby?.gender);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [babyName, setBabyName] = useState('');
   const [babyGender, setBabyGender] = useState<Gender>('male');
@@ -34,8 +49,6 @@ export default function ProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Limpia todo el estado del modal al cerrar
-  // Esto corrige el bug donde el botón "Agregar" dejaba de funcionar
   const resetModal = () => {
     setBabyName('');
     setBabyGender('male');
@@ -98,7 +111,6 @@ export default function ProfileScreen() {
     const months =
       (now.getFullYear() - birthDate.getFullYear()) * 12 +
       (now.getMonth() - birthDate.getMonth());
-
     if (months < 1) return 'Recién nacido';
     if (months < 24) return `${months} ${months === 1 ? 'mes' : 'meses'}`;
     const years = Math.floor(months / 12);
@@ -120,7 +132,10 @@ export default function ProfileScreen() {
         {/* ── TARJETA DEL PADRE ── */}
         <View className="mx-5 mb-6 bg-white rounded-2xl p-5">
           <View className="flex-row items-center">
-            <View className="w-16 h-16 rounded-full bg-primary items-center justify-center mr-4">
+            <View
+              style={{ backgroundColor: accentColor }}
+              className="w-16 h-16 rounded-full items-center justify-center mr-4"
+            >
               <Text className="text-white text-2xl font-bold">
                 {user?.displayName?.charAt(0).toUpperCase() ?? '?'}
               </Text>
@@ -146,28 +161,30 @@ export default function ProfileScreen() {
               className="flex-row items-center"
               onPress={() => setShowAddModal(true)}
             >
-              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-              <Text className="text-primary text-sm font-semibold ml-1">
+              <Ionicons name="add-circle-outline" size={18} color={accentColor} />
+              <Text style={{ color: accentColor }} className="text-sm font-semibold ml-1">
                 Agregar
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Estado de carga — spinner solo durante la carga inicial */}
           {isLoading ? (
             <View className="items-center py-6">
-              <ActivityIndicator color={colors.primary} />
-              <Text className="text-text-secondary text-sm mt-2">
-                Cargando...
-              </Text>
+              <ActivityIndicator color={accentColor} />
+              <Text className="text-text-secondary text-sm mt-2">Cargando...</Text>
             </View>
           ) : babies.length === 0 ? (
-            // Estado vacío — mensaje amigable en lugar de spinner infinito
             <TouchableOpacity
-              className="bg-white border-2 border-dashed border-primary rounded-2xl p-6 items-center"
+              style={{ borderColor: accentColor }}
+              className="bg-white border-2 border-dashed rounded-2xl p-6 items-center"
               onPress={() => setShowAddModal(true)}
             >
-              <Text className="text-4xl mb-2">🍼</Text>
+              <View
+                style={{ backgroundColor: accentLightColor }}
+                className="w-16 h-16 rounded-full items-center justify-center mb-3"
+              >
+                <Ionicons name="happy-outline" size={32} color={accentColor} />
+              </View>
               <Text className="text-text-primary font-semibold text-base mb-1">
                 ¡Agrega a tu bebé!
               </Text>
@@ -183,6 +200,8 @@ export default function ProfileScreen() {
                 baby={baby}
                 isActive={activeBaby?.id === baby.id}
                 ageLabel={getAgeLabel(baby.birthDate)}
+                accentColor={getGenderColor(baby.gender)}
+                accentLightColor={getGenderLightColor(baby.gender)}
                 onSelect={() => setActiveBaby(baby)}
                 onDelete={() => onDeleteBaby(baby)}
               />
@@ -206,12 +225,18 @@ export default function ProfileScreen() {
               icon="notifications-outline"
               label="Notificaciones"
               sublabel="Recordatorios y alertas"
+              accentColor={accentColor}
+              accentLightColor={accentLightColor}
+              comingSoon
               onPress={() => { }}
             />
             <SettingsRow
               icon="lock-closed-outline"
               label="Privacidad"
               sublabel="Datos y seguridad"
+              accentColor={accentColor}
+              accentLightColor={accentLightColor}
+              comingSoon
               onPress={() => { }}
               isLast
             />
@@ -247,7 +272,6 @@ export default function ProfileScreen() {
         >
           <View className="flex-1 bg-black/50 justify-end">
             <View className="bg-white rounded-t-3xl p-6">
-
               <View className="w-10 h-1 bg-border rounded-full self-center mb-4" />
 
               <Text className="text-text-primary text-lg font-bold mb-5">
@@ -274,11 +298,7 @@ export default function ProfileScreen() {
                 className="bg-neutral border border-border rounded-xl px-4 py-3 mb-4 flex-row items-center"
                 onPress={() => setShowDatePicker(true)}
               >
-                <Ionicons
-                  name="calendar-outline"
-                  size={16}
-                  color={colors.textSecondary}
-                />
+                <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
                 <Text className="ml-2 text-sm text-text-secondary">
                   {formatBirthDate(babyBirthDate)}
                 </Text>
@@ -289,29 +309,43 @@ export default function ProfileScreen() {
               </Text>
               <View className="flex-row gap-3 mb-6">
                 <TouchableOpacity
-                  className={`flex-1 rounded-xl py-3 items-center border-2 ${babyGender === 'male'
-                      ? 'bg-primary border-primary'
-                      : 'bg-white border-border'
-                    }`}
+                  style={babyGender === 'male'
+                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                    : { backgroundColor: '#FFFFFF', borderColor: colors.border }
+                  }
+                  className="flex-1 rounded-xl py-4 items-center border-2"
                   onPress={() => setBabyGender('male')}
                 >
-                  <Text className="text-xl mb-1">👦</Text>
-                  <Text className={`text-sm font-semibold ${babyGender === 'male' ? 'text-white' : 'text-text-secondary'
-                    }`}>
+                  <Ionicons
+                    name="male"
+                    size={24}
+                    color={babyGender === 'male' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text
+                    style={{ color: babyGender === 'male' ? '#FFFFFF' : colors.textSecondary }}
+                    className="text-sm font-semibold mt-1"
+                  >
                     Niño
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className={`flex-1 rounded-xl py-3 items-center border-2 ${babyGender === 'female'
-                      ? 'bg-primary border-primary'
-                      : 'bg-white border-border'
-                    }`}
+                  style={babyGender === 'female'
+                    ? { backgroundColor: '#F472B6', borderColor: '#F472B6' }
+                    : { backgroundColor: '#FFFFFF', borderColor: colors.border }
+                  }
+                  className="flex-1 rounded-xl py-4 items-center border-2"
                   onPress={() => setBabyGender('female')}
                 >
-                  <Text className="text-xl mb-1">👧</Text>
-                  <Text className={`text-sm font-semibold ${babyGender === 'female' ? 'text-white' : 'text-text-secondary'
-                    }`}>
+                  <Ionicons
+                    name="female"
+                    size={24}
+                    color={babyGender === 'female' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text
+                    style={{ color: babyGender === 'female' ? '#FFFFFF' : colors.textSecondary }}
+                    className="text-sm font-semibold mt-1"
+                  >
                     Niña
                   </Text>
                 </TouchableOpacity>
@@ -323,12 +357,11 @@ export default function ProfileScreen() {
                   onPress={resetModal}
                   disabled={isSaving}
                 >
-                  <Text className="text-text-secondary font-semibold">
-                    Cancelar
-                  </Text>
+                  <Text className="text-text-secondary font-semibold">Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className="flex-1 bg-primary rounded-xl py-3 items-center"
+                  style={{ backgroundColor: accentColor }}
+                  className="flex-1 rounded-xl py-3 items-center"
                   onPress={onAddBaby}
                   disabled={isSaving}
                 >
@@ -340,8 +373,6 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* DatePickerModal DENTRO del Modal para evitar
-                  conflicto de z-index que impedía que se abriera */}
               <DatePickerModal
                 visible={showDatePicker}
                 currentDate={babyBirthDate}
@@ -353,7 +384,6 @@ export default function ProfileScreen() {
                 }}
                 onCancel={() => setShowDatePicker(false)}
               />
-
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -362,26 +392,42 @@ export default function ProfileScreen() {
   );
 }
 
+// ── COMPONENTES INTERNOS ──
+
 interface BabyCardProps {
   baby: Baby;
   isActive: boolean;
   ageLabel: string;
+  accentColor: string;
+  accentLightColor: string;
   onSelect: () => void;
   onDelete: () => void;
 }
 
-const BabyCard = ({ baby, isActive, ageLabel, onSelect, onDelete }: BabyCardProps) => (
+const BabyCard = ({
+  baby,
+  isActive,
+  ageLabel,
+  accentColor,
+  accentLightColor,
+  onSelect,
+  onDelete,
+}: BabyCardProps) => (
   <TouchableOpacity
-    className={`bg-white rounded-2xl p-4 mb-3 flex-row items-center border-2 ${isActive ? 'border-primary' : 'border-transparent'
-      }`}
+    style={{ borderColor: isActive ? accentColor : 'transparent' }}
+    className="bg-white rounded-2xl p-4 mb-3 flex-row items-center border-2"
     onPress={onSelect}
     activeOpacity={0.7}
   >
-    <View className={`w-12 h-12 rounded-full items-center justify-center mr-3 ${isActive ? 'bg-primary' : 'bg-primary-light'
-      }`}>
-      <Text className="text-2xl">
-        {baby.gender === 'male' ? '👦' : '👧'}
-      </Text>
+    <View
+      style={{ backgroundColor: isActive ? accentColor : accentLightColor }}
+      className="w-12 h-12 rounded-full items-center justify-center mr-3"
+    >
+      <Ionicons
+        name={baby.gender === 'female' ? 'female' : 'male'}
+        size={22}
+        color={isActive ? '#FFFFFF' : accentColor}
+      />
     </View>
 
     <View className="flex-1">
@@ -390,7 +436,10 @@ const BabyCard = ({ baby, isActive, ageLabel, onSelect, onDelete }: BabyCardProp
           {baby.name}
         </Text>
         {isActive && (
-          <View className="bg-primary px-2 py-0.5 rounded-full">
+          <View
+            style={{ backgroundColor: accentColor }}
+            className="px-2 py-0.5 rounded-full"
+          >
             <Text className="text-white text-xs font-semibold">Activo</Text>
           </View>
         )}
@@ -408,24 +457,46 @@ interface SettingsRowProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   sublabel: string;
+  accentColor: string;
+  accentLightColor: string;
   onPress: () => void;
   isLast?: boolean;
+  comingSoon?: boolean;
 }
 
-const SettingsRow = ({ icon, label, sublabel, onPress, isLast }: SettingsRowProps) => (
+const SettingsRow = ({
+  icon,
+  label,
+  sublabel,
+  accentColor,
+  accentLightColor,
+  onPress,
+  isLast,
+  comingSoon,
+}: SettingsRowProps) => (
   <TouchableOpacity
-    className={`flex-row items-center px-4 py-4 ${!isLast ? 'border-b border-border' : ''
-      }`}
+    className={`flex-row items-center px-4 py-4 ${!isLast ? 'border-b border-border' : ''}`}
     onPress={onPress}
     activeOpacity={0.7}
   >
-    <View className="w-8 h-8 rounded-full bg-primary-light items-center justify-center mr-3">
-      <Ionicons name={icon} size={16} color={colors.primary} />
+    <View
+      style={{ backgroundColor: accentLightColor }}
+      className="w-8 h-8 rounded-full items-center justify-center mr-3"
+    >
+      <Ionicons name={icon} size={16} color={accentColor} />
     </View>
     <View className="flex-1">
       <Text className="text-text-primary text-sm font-semibold">{label}</Text>
       <Text className="text-text-secondary text-xs">{sublabel}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={16} color={colors.textDisabled} />
+    {comingSoon ? (
+      <View className="bg-neutral border border-border px-2 py-0.5 rounded-full">
+        <Text className="text-text-disabled text-xs font-medium">
+          Próximamente
+        </Text>
+      </View>
+    ) : (
+      <Ionicons name="chevron-forward" size={16} color={colors.textDisabled} />
+    )}
   </TouchableOpacity>
 );

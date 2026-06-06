@@ -11,17 +11,18 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../hooks/useAuth';
+import { colors } from '../../constants/theme';
 
-type RegisterNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>
+type RegisterNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
 export default function RegisterScreen() {
-
   const [parentName, setParentName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const { handleRegister, isLoading, error } = useAuth();
@@ -32,20 +33,14 @@ export default function RegisterScreen() {
       setValidationError('Por favor completa todos los campos.');
       return;
     }
-
-    // Validación 2: contraseñas coinciden
     if (password !== confirmPassword) {
       setValidationError('Las contraseñas no coinciden.');
       return;
     }
-
-    // Validación 3: longitud mínima
     if (password.length < 6) {
       setValidationError('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
-
-    // Si pasa todas las validaciones, limpiamos el error y procedemos
     setValidationError(null);
     await handleRegister({ parentName, email, password });
   };
@@ -53,42 +48,41 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className='flex-1'
+      className="flex-1"
     >
       <ScrollView
-        className='flex-1 bg-neutral'
+        className="flex-1 bg-neutral"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
       >
-        <View className='flex-1 px-6 pt-14 pb-8'>
+        <View className="flex-1 px-6 pt-14 pb-8">
 
-          {/* ── BOTÓN REGRESAR ── */}
+          {/* ── BOTÓN REGRESAR — ícono en lugar de flecha de texto ── */}
           <TouchableOpacity
-            className='self-start mb-8'
+            className="self-start mb-8 p-2"
             onPress={() => navigation.goBack()}
           >
-            <Text className='text-primary text-4x1 p-2'>←</Text>
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
           </TouchableOpacity>
 
-          {/* ── SECCIÓN LOGO Y TÍTULOS ── */}
-          <View className='items-center mb-8'>
-            <View className='w-20 h-20 rounded-full bg-primary mb-4 items-center justify-center'>
-              <Text className='text-4xl'>🍼</Text>
+          {/* ── LOGO Y TÍTULOS ── */}
+          <View className="items-center mb-8">
+            {/* Ícono de bebé en lugar de emoji 🍼 */}
+            <View className="w-20 h-20 rounded-full bg-primary mb-4 items-center justify-center">
+              <Ionicons name="heart" size={36} color="#FFFFFF" />
             </View>
 
-            <Text className='text-text-primary text-3xl font-bold mb-2'>
+            <Text className="text-text-primary text-3xl font-bold mb-2">
               Únete a Bebio
             </Text>
-
-            <Text className='text-text-secundary text-base text-center px-4'>
+            <Text className="text-text-secondary text-base text-center px-4">
               Comienza el seguimiento del desarrollo de tu bebé
             </Text>
           </View>
 
           {/* ── FORMULARIO ── */}
           <View className="w-full">
-
-            {/* -- Campo Nombre del padre -- */}
             <Text className="text-text-primary text-sm font-medium mb-2">
               Nombre del padre/madre
             </Text>
@@ -102,7 +96,6 @@ export default function RegisterScreen() {
               autoCorrect={false}
             />
 
-            {/* -- Campo Email -- */}
             <Text className="text-text-primary text-sm font-medium mb-2">
               Correo electrónico
             </Text>
@@ -117,7 +110,6 @@ export default function RegisterScreen() {
               autoCorrect={false}
             />
 
-            {/* -- Campo Password -- */}
             <Text className="text-text-primary text-sm font-medium mb-2">
               Contraseña
             </Text>
@@ -130,7 +122,6 @@ export default function RegisterScreen() {
               secureTextEntry
             />
 
-            {/* -- Campo Confirmar Password -- */}
             <Text className="text-text-primary text-sm font-medium mb-2">
               Confirmar contraseña
             </Text>
@@ -143,7 +134,6 @@ export default function RegisterScreen() {
               secureTextEntry
             />
 
-            {/* -- Mensaje de error -- */}
             {(validationError || error) && (
               <View className="bg-red-50 border border-error rounded-xl p-3 mb-4">
                 <Text className="text-error text-sm text-center">
@@ -152,7 +142,6 @@ export default function RegisterScreen() {
               </View>
             )}
 
-            {/* -- Botón Crear Cuenta -- */}
             <TouchableOpacity
               className="bg-primary rounded-xl py-4 items-center mb-6"
               onPress={onRegisterPress}
@@ -167,7 +156,6 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
 
-            {/* -- Link a Login -- */}
             <View className="flex-row justify-center">
               <Text className="text-text-secondary text-sm">
                 ¿Ya tienes cuenta?{' '}
@@ -178,13 +166,9 @@ export default function RegisterScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-
-
           </View>
         </View>
-
       </ScrollView>
-
     </KeyboardAvoidingView>
   );
 }

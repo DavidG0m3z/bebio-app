@@ -60,7 +60,6 @@ export default function HomeScreen() {
   const [aiQuery, setAiQuery] = useState('');
   const [showChat, setShowChat] = useState(false);
   const [chatInitialMessage, setChatInitialMessage] = useState('');
-
   const [dailyTip, setDailyTip] = useState<string | null>(null);
   const [tipLoading, setTipLoading] = useState(false);
 
@@ -112,11 +111,15 @@ export default function HomeScreen() {
     setShowChat(true);
   };
 
+  // Sin bebé activo
   if (!activeBaby) {
     return (
       <SafeAreaView className="flex-1 bg-neutral">
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-4xl mb-4">🍼</Text>
+          {/* 🍼 → ícono de bebé */}
+          <View className="w-16 h-16 rounded-full bg-primary-light items-center justify-center mb-4">
+            <Ionicons name="happy-outline" size={32} color={colors.primary} />
+          </View>
           <Text className="text-text-primary text-lg font-bold text-center mb-2">
             ¡Bienvenido a Bebio!
           </Text>
@@ -143,6 +146,13 @@ export default function HomeScreen() {
     return `${years} ${years === 1 ? 'año' : 'años'}`;
   };
 
+  // Color según género del bebé activo
+  const genderColor = activeBaby.gender === 'female' ? '#F472B6' : colors.primary;
+  const genderLightColor = activeBaby.gender === 'female' ? '#FCE7F3' : colors.primaryLight;
+  // Ícono de género
+  const genderIcon: keyof typeof Ionicons.glyphMap =
+    activeBaby.gender === 'male' ? 'male-outline' : 'female-outline';
+
   return (
     <SafeAreaView className="flex-1 bg-neutral">
       <ScrollView
@@ -152,21 +162,26 @@ export default function HomeScreen() {
       >
         {/* ── HEADER ── */}
         <View className="px-5 pt-4 pb-5">
-          {/* Saludo con nombre del padre */}
+          {/* Saludo — sin emoji 👋, reemplazado por texto limpio */}
           <Text className="text-text-secondary text-sm">
-            {getGreeting()}, {firstName} 👋
+            {getGreeting()}, {firstName}
           </Text>
-          {/* Nombre del bebé como título principal */}
           <Text className="text-text-primary text-2xl font-bold">
             {activeBaby.name}
           </Text>
-          {/* Chip con género y edad del bebé */}
+          {/* Chip de género con ícono de Ionicons */}
           <View className="flex-row items-center mt-2">
-            <View className="bg-primary-light px-3 py-1 rounded-full flex-row items-center">
-              <Text className="text-primary text-xs font-semibold mr-1">
-                {activeBaby.gender === 'male' ? '👦' : '👧'}
-              </Text>
-              <Text className="text-primary text-xs font-semibold">
+            <View
+              style={{ backgroundColor: genderLightColor }}
+              className="px-3 py-1 rounded-full flex-row items-center"
+            >
+              <Ionicons
+                name={genderIcon}
+                size={12}
+                color={genderColor}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={{ color: genderColor }} className="text-xs font-semibold">
                 {getAgeLabel()}
               </Text>
             </View>
@@ -231,7 +246,6 @@ export default function HomeScreen() {
                 Para {activeBaby.name} — {getAgeLabel()}
               </Text>
             </View>
-
             {tipLoading ? (
               <View className="flex-row items-center gap-2 py-2">
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -244,16 +258,11 @@ export default function HomeScreen() {
                 <Text className="text-text-secondary text-sm leading-5">
                   {dailyTip}
                 </Text>
-                {/* Botón para regenerar el tip */}
                 <TouchableOpacity
                   className="self-end mt-3 flex-row items-center gap-1"
                   onPress={loadDailyTip}
                 >
-                  <Ionicons
-                    name="refresh-outline"
-                    size={14}
-                    color={colors.primary}
-                  />
+                  <Ionicons name="refresh-outline" size={14} color={colors.primary} />
                   <Text className="text-primary text-xs font-medium">
                     Nuevo tip
                   </Text>
@@ -318,16 +327,23 @@ export default function HomeScreen() {
                     month: 'long',
                   })}
                 </Text>
-                <View className="flex-row gap-2 mt-1">
+                {/* ⚖️ y 📏 reemplazados por íconos */}
+                <View className="flex-row gap-3 mt-1">
                   {lastRecord.weight !== null && (
-                    <Text className="text-text-secondary text-xs">
-                      ⚖️ {lastRecord.weight}kg
-                    </Text>
+                    <View className="flex-row items-center gap-1">
+                      <Ionicons name="barbell-outline" size={12} color={colors.textSecondary} />
+                      <Text className="text-text-secondary text-xs">
+                        {lastRecord.weight}kg
+                      </Text>
+                    </View>
                   )}
                   {lastRecord.height !== null && (
-                    <Text className="text-text-secondary text-xs">
-                      📏 {lastRecord.height}cm
-                    </Text>
+                    <View className="flex-row items-center gap-1">
+                      <Ionicons name="resize-outline" size={12} color={colors.textSecondary} />
+                      <Text className="text-text-secondary text-xs">
+                        {lastRecord.height}cm
+                      </Text>
+                    </View>
                   )}
                 </View>
               </View>
