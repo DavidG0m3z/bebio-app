@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { VictoryLine, VictoryChart, VictoryAxis, VictoryLegend } from 'victory-native';
+import { VictoryLine, VictoryChart, VictoryAxis } from 'victory-native';
 import { useBabyContext } from '../../context/BabyContext';
 import { useGrowth } from '../../hooks/useGrowth';
 import { CreateGrowthRecord } from '../../services/firebase/growthService';
@@ -44,10 +44,7 @@ export default function GrowthScreen() {
     activeBaby?.gender ?? null
   );
 
-  // Tab activo de la gráfica
   const [activeTab, setActiveTab] = useState<ChartTab>('weight');
-
-  // Estado del modal
   const [showModal, setShowModal] = useState(false);
   const [recordDate, setRecordDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -67,7 +64,6 @@ export default function GrowthScreen() {
   };
 
   const onSaveRecord = async () => {
-    // Al menos peso o talla deben tener valor
     if (!weightInput.trim() && !heightInput.trim()) {
       Alert.alert('Error', 'Ingresa al menos el peso o la talla.');
       return;
@@ -105,7 +101,6 @@ export default function GrowthScreen() {
     );
   };
 
-  // Selecciona los datos de la gráfica según el tab activo
   const getActiveChartData = () => {
     if (activeTab === 'weight') return weightChartData;
     if (activeTab === 'height') return heightChartData;
@@ -123,11 +118,12 @@ export default function GrowthScreen() {
     return 'Perímetro cefálico';
   };
 
-  // Estado vacío — sin bebé activo
   if (!activeBaby) {
     return (
       <View className="flex-1 items-center justify-center bg-neutral px-8">
-        <Text className="text-4xl mb-4">📏</Text>
+        <View className="w-16 h-16 rounded-full bg-primary-light items-center justify-center mb-4">
+          <Ionicons name="stats-chart-outline" size={32} color={colors.primary} />
+        </View>
         <Text className="text-text-primary text-lg font-bold text-center mb-2">
           No hay bebé activo
         </Text>
@@ -214,9 +210,9 @@ export default function GrowthScreen() {
           </Text>
 
           {chartData.babyData.length === 0 ? (
-            // Estado vacío de la gráfica
             <View className="h-48 items-center justify-center">
-              <Text className="text-text-disabled text-sm text-center">
+              <Ionicons name="analytics-outline" size={32} color={colors.textDisabled} />
+              <Text className="text-text-disabled text-sm text-center mt-2">
                 Agrega registros para ver la gráfica
               </Text>
             </View>
@@ -227,7 +223,6 @@ export default function GrowthScreen() {
               padding={{ top: 10, bottom: 40, left: 45, right: 20 }}
               domain={{ x: [0, 24] }}
             >
-              {/* Eje X — meses */}
               <VictoryAxis
                 tickValues={[0, 3, 6, 9, 12, 15, 18, 21, 24]}
                 tickFormat={(t: number) => `${t}m`}
@@ -236,8 +231,6 @@ export default function GrowthScreen() {
                   grid: { stroke: colors.border, strokeWidth: 0.5 },
                 }}
               />
-
-              {/* Eje Y — valores */}
               <VictoryAxis
                 dependentAxis
                 style={{
@@ -245,32 +238,24 @@ export default function GrowthScreen() {
                   grid: { stroke: colors.border, strokeWidth: 0.5 },
                 }}
               />
-
-              {/* Curva P3 — mínimo OMS */}
               <VictoryLine
                 data={chartData.p3}
                 style={{
                   data: { stroke: '#FCA5A5', strokeWidth: 1, strokeDasharray: '4,4' },
                 }}
               />
-
-              {/* Curva P50 — promedio OMS */}
               <VictoryLine
                 data={chartData.p50}
                 style={{
                   data: { stroke: '#86EFAC', strokeWidth: 1.5, strokeDasharray: '4,4' },
                 }}
               />
-
-              {/* Curva P97 — máximo OMS */}
               <VictoryLine
                 data={chartData.p97}
                 style={{
                   data: { stroke: '#FCA5A5', strokeWidth: 1, strokeDasharray: '4,4' },
                 }}
               />
-
-              {/* Curva del bebé */}
               <VictoryLine
                 data={chartData.babyData}
                 style={{
@@ -280,7 +265,6 @@ export default function GrowthScreen() {
             </VictoryChart>
           )}
 
-          {/* Leyenda */}
           <View className="flex-row justify-center gap-4 mt-2">
             <LegendItem color={colors.primary} label={activeBaby.name} solid />
             <LegendItem color="#86EFAC" label="P50 OMS" />
@@ -298,12 +282,12 @@ export default function GrowthScreen() {
 
           {records.length === 0 ? (
             <View className="bg-white rounded-2xl p-6 items-center">
-              <Text className="text-text-disabled text-sm text-center">
+              <Ionicons name="document-outline" size={32} color={colors.textDisabled} />
+              <Text className="text-text-disabled text-sm text-center mt-2">
                 Aún no hay registros.{'\n'}Toca + para agregar el primero.
               </Text>
             </View>
           ) : (
-            // Mostramos en orden inverso — más reciente primero
             [...records].reverse().map((record) => (
               <GrowthRecordCard
                 key={record.id}
@@ -317,7 +301,6 @@ export default function GrowthScreen() {
       </ScrollView>
 
       {/* ── BOTÓN + FLOTANTE ── */}
-      {/* position absolute no funciona con className en RN — usamos style */}
       <TouchableOpacity
         style={{
           position: 'absolute',
@@ -375,7 +358,6 @@ export default function GrowthScreen() {
                 Registra el crecimiento de {activeBaby.name}
               </Text>
 
-              {/* Fecha */}
               <Text className="text-text-primary text-sm font-medium mb-2">
                 Fecha del registro
               </Text>
@@ -393,7 +375,6 @@ export default function GrowthScreen() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Peso */}
               <Text className="text-text-primary text-sm font-medium mb-2">
                 Peso (kg)
               </Text>
@@ -406,7 +387,6 @@ export default function GrowthScreen() {
                 keyboardType="decimal-pad"
               />
 
-              {/* Talla */}
               <Text className="text-text-primary text-sm font-medium mb-2">
                 Talla (cm)
               </Text>
@@ -419,7 +399,6 @@ export default function GrowthScreen() {
                 keyboardType="decimal-pad"
               />
 
-              {/* Perímetro cefálico */}
               <Text className="text-text-primary text-sm font-medium mb-2">
                 Perímetro cefálico (cm)
               </Text>
@@ -432,7 +411,6 @@ export default function GrowthScreen() {
                 keyboardType="decimal-pad"
               />
 
-              {/* Notas */}
               <Text className="text-text-primary text-sm font-medium mb-2">
                 Notas (opcional)
               </Text>
@@ -447,16 +425,13 @@ export default function GrowthScreen() {
                 style={{ height: 80, textAlignVertical: 'top' }}
               />
 
-              {/* Botones */}
               <View className="flex-row gap-3">
                 <TouchableOpacity
                   className="flex-1 border border-border rounded-xl py-3 items-center"
                   onPress={resetModal}
                   disabled={isSaving}
                 >
-                  <Text className="text-text-secondary font-semibold">
-                    Cancelar
-                  </Text>
+                  <Text className="text-text-secondary font-semibold">Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   className="flex-1 bg-primary rounded-xl py-3 items-center"
@@ -487,7 +462,6 @@ interface MetricCardProps {
 }
 
 const MetricCard = ({ label, value, icon }: MetricCardProps) => (
-  // flex-1: cada tarjeta ocupa el mismo espacio en la fila
   <View className="flex-1 bg-white rounded-2xl p-3 items-center">
     <View className="w-8 h-8 rounded-full bg-primary-light items-center justify-center mb-2">
       <Ionicons name={icon} size={16} color={colors.primary} />
@@ -515,7 +489,6 @@ const LegendItem = ({ color, label, solid }: LegendItemProps) => (
         height: 3,
         backgroundColor: color,
         borderRadius: 2,
-        // La línea del bebé es sólida, las OMS son punteadas (simulado con opacidad)
         opacity: solid ? 1 : 0.7,
       }}
     />
@@ -535,7 +508,6 @@ const GrowthRecordCard = ({ record, unit, onDelete }: GrowthRecordCardProps) => 
 
   return (
     <View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center">
-      {/* Ícono de calendario */}
       <View className="w-10 h-10 rounded-full bg-primary-light items-center justify-center mr-3">
         <Ionicons name="calendar-outline" size={18} color={colors.primary} />
       </View>
@@ -549,26 +521,34 @@ const GrowthRecordCard = ({ record, unit, onDelete }: GrowthRecordCardProps) => 
           })}
         </Text>
 
-        {/* Métricas en una fila */}
-        <View className="flex-row flex-wrap gap-2 mt-1">
+        {/* Métricas con íconos de Ionicons en lugar de emojis */}
+        <View className="flex-row flex-wrap gap-3 mt-1">
           {record.weight !== null && (
-            <Text className="text-text-secondary text-xs">
-              ⚖️ {record.weight} kg
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="barbell-outline" size={12} color={colors.textSecondary} />
+              <Text className="text-text-secondary text-xs">
+                {record.weight} kg
+              </Text>
+            </View>
           )}
           {record.height !== null && (
-            <Text className="text-text-secondary text-xs">
-              📏 {record.height} cm
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="resize-outline" size={12} color={colors.textSecondary} />
+              <Text className="text-text-secondary text-xs">
+                {record.height} cm
+              </Text>
+            </View>
           )}
           {record.headCircumference !== null && (
-            <Text className="text-text-secondary text-xs">
-              ⭕ {record.headCircumference} cm
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="ellipse-outline" size={12} color={colors.textSecondary} />
+              <Text className="text-text-secondary text-xs">
+                {record.headCircumference} cm
+              </Text>
+            </View>
           )}
         </View>
 
-        {/* Notas */}
         {record.notes ? (
           <Text className="text-text-disabled text-xs mt-1" numberOfLines={1}>
             {record.notes}
@@ -577,7 +557,6 @@ const GrowthRecordCard = ({ record, unit, onDelete }: GrowthRecordCardProps) => 
       </View>
 
       <View className="items-end gap-2">
-        {/* Badge de percentil */}
         {percentile && (
           <View
             style={{ backgroundColor: percentileColor + '20' }}
@@ -588,8 +567,6 @@ const GrowthRecordCard = ({ record, unit, onDelete }: GrowthRecordCardProps) => 
             </Text>
           </View>
         )}
-
-        {/* Botón eliminar */}
         <TouchableOpacity className="p-1" onPress={onDelete}>
           <Ionicons name="trash-outline" size={16} color={colors.error} />
         </TouchableOpacity>

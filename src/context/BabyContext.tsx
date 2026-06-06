@@ -46,11 +46,6 @@ export function BabyProvider({ children }: BabyProviderProps) {
   const auth = getAuth();
   const userId = auth.currentUser?.uid;
 
-  useEffect(() => {
-    if (!userId) return;
-    loadBabies();
-  }, [userId]);
-
   const loadBabies = async () => {
     if (!userId) return;
     try {
@@ -74,6 +69,12 @@ export function BabyProvider({ children }: BabyProviderProps) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!userId) return;
+    loadBabies();
+  }, [userId, loadBabies]);
+
 
   const setActiveBaby = async (baby: Baby): Promise<void> => {
     if (!userId) return;
