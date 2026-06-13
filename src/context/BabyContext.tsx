@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from 'react';
 import { getAuth } from 'firebase/auth';
@@ -18,7 +19,6 @@ import {
 
 export type { Baby, Gender };
 
-
 interface BabyContextValue {
   babies: Baby[];
   activeBaby: Baby | null;
@@ -31,7 +31,6 @@ interface BabyContextValue {
 }
 
 const BabyContext = createContext<BabyContextValue | undefined>(undefined);
-
 
 interface BabyProviderProps {
   children: ReactNode;
@@ -46,7 +45,8 @@ export function BabyProvider({ children }: BabyProviderProps) {
   const auth = getAuth();
   const userId = auth.currentUser?.uid;
 
-  const loadBabies = async () => {
+  // useCallback para que loadBabies no se recree en cada render
+  const loadBabies = useCallback(async () => {
     if (!userId) return;
     try {
       setIsLoading(true);
@@ -68,13 +68,13 @@ export function BabyProvider({ children }: BabyProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]); // ← solo depende de userId, no de loadBabies
 
+  // Solo se ejecuta cuando userId cambia — no en cada render
   useEffect(() => {
     if (!userId) return;
     loadBabies();
-  }, [userId, loadBabies]);
-
+  }, [userId]); // ← eliminamos loadBabies de las dependencias
 
   const setActiveBaby = async (baby: Baby): Promise<void> => {
     if (!userId) return;
@@ -96,9 +96,14 @@ export function BabyProvider({ children }: BabyProviderProps) {
       const newBaby = await createBaby(userId, name, birthDate, gender);
       setBabies((prev) => [...prev, newBaby]);
 
-      if (babies.length === 0) {
-        await setActiveBaby(newBaby);
-      }
+      // Usamos el valor actual de babies via callback para evitar stale closure
+      setBabies((prev) => {
+        if (prev.length === 1) {
+          setActiveBabyState(newBaby);
+          saveActiveBabyId(userId, newBaby.id);
+        }
+        return prev;
+      });
     } catch {
       setError('No se pudo agregar el bebé.');
     }
@@ -148,7 +153,6 @@ export function BabyProvider({ children }: BabyProviderProps) {
   );
 }
 
-// --- Hook personalizado ---
 export const useBabyContext = (): BabyContextValue => {
   const context = useContext(BabyContext);
   if (!context) {

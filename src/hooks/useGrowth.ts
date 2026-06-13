@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAuth } from 'firebase/auth';
 import {
   getGrowthRecords,
@@ -16,6 +16,7 @@ import {
   WHO_HEAD_BOYS,
   WHO_HEAD_GIRLS,
   calculatePercentile,
+  WHODataPoint,
 } from '../constants/WhoData';
 import { Gender } from '../context/BabyContext';
 
@@ -27,8 +28,8 @@ export interface GrowthRecordWithPercentile extends GrowthRecord {
 }
 
 export interface ChartDataPoint {
-  x: number; // edad en meses
-  y: number; // valor medido
+  x: number;
+  y: number;
 }
 
 export interface GrowthChartData {
@@ -54,6 +55,63 @@ interface UseGrowthReturn {
   refreshRecords: () => Promise<void>;
 }
 
+// Funciones puras fuera del hook — no se recrean en cada render
+const getAgeInMonths = (recordDate: Date, birthDate: Date): number => {
+  const months =
+    (recordDate.getFullYear() - birthDate.getFullYear()) * 12 +
+    (recordDate.getMonth() - birthDate.getMonth());
+  return Math.max(0, Math.min(months, 24));
+};
+
+const getWeightTable = (gender: Gender | null): WHODataPoint[] =>
+  gender === 'female' ? WHO_WEIGHT_GIRLS : WHO_WEIGHT_BOYS;
+
+const getHeightTable = (gender: Gender | null): WHODataPoint[] =>
+  gender === 'female' ? WHO_HEIGHT_GIRLS : WHO_HEIGHT_BOYS;
+
+const getHeadTable = (gender: Gender | null): WHODataPoint[] =>
+  gender === 'female' ? WHO_HEAD_GIRLS : WHO_HEAD_BOYS;
+
+const enrichRecords = (
+  rawRecords: GrowthRecord[],
+  birthDate: Date,
+  gender: Gender | null
+): GrowthRecordWithPercentile[] => {
+  return rawRecords.map((record) => {
+    const ageInMonths = getAgeInMonths(record.date, birthDate);
+    return {
+      ...record,
+      ageInMonths,
+      weightPercentile: record.weight !== null
+        ? calculatePercentile(record.weight, ageInMonths, getWeightTable(gender))
+        : null,
+      heightPercentile: record.height !== null
+        ? calculatePercentile(record.height, ageInMonths, getHeightTable(gender))
+        : null,
+      headPercentile: record.headCircumference !== null
+        ? calculatePercentile(record.headCircumference, ageInMonths, getHeadTable(gender))
+        : null,
+    };
+  });
+};
+
+const buildChartData = (
+  records: GrowthRecordWithPercentile[],
+  getValue: (r: GrowthRecordWithPercentile) => number | null,
+  table: WHODataPoint[]
+): GrowthChartData => {
+  const babyData: ChartDataPoint[] = records
+    .filter((r) => getValue(r) !== null)
+    .map((r) => ({ x: r.ageInMonths, y: getValue(r) as number }));
+
+  return {
+    babyData,
+    p3: table.map((d) => ({ x: d.month, y: d.p3 })),
+    p50: table.map((d) => ({ x: d.month, y: d.p50 })),
+    p97: table.map((d) => ({ x: d.month, y: d.p97 })),
+  };
+};
+
 export const useGrowth = (
   babyId: string | null,
   birthDate: Date | null,
@@ -66,110 +124,66 @@ export const useGrowth = (
   const auth = getAuth();
   const userId = auth.currentUser?.uid;
 
-  const getAgeInMonths = useCallback((recordDate: Date): number => {
-    if (!birthDate) return 0;
-    const months =
-      (recordDate.getFullYear() - birthDate.getFullYear()) * 12 +
-      (recordDate.getMonth() - birthDate.getMonth());
-    return Math.max(0, Math.min(months, 24));
-  }, [birthDate]);
+  // Usamos ref para babyId para evitar que el useEffect se dispare innecesariamente
+  const babyIdRef = useRef(babyId);
 
-  const getWeightTable = useCallback(() => {
-    return gender === 'female' ? WHO_WEIGHT_GIRLS : WHO_WEIGHT_BOYS;
-  }, [gender]);
+  useEffect(() => {
+    // Solo recargamos si el babyId realmente cambió
+    if (babyIdRef.current === babyId && records.length > 0) return;
+    babyIdRef.current = babyId;
 
-  const getHeightTable = useCallback(() => {
-    return gender === 'female' ? WHO_HEIGHT_GIRLS : WHO_HEIGHT_BOYS;
-  }, [gender]);
-
-  const getHeadTable = useCallback(() => {
-    return gender === 'female' ? WHO_HEAD_GIRLS : WHO_HEAD_BOYS;
-  }, [gender]);
-
-  const enrichRecords = useCallback((
-    rawRecords: GrowthRecord[]
-  ): GrowthRecordWithPercentile[] => {
-
-    return rawRecords.map((record) => {
-      const ageInMonths = getAgeInMonths(record.date);
-
-      return {
-        ...record,
-        ageInMonths,
-        weightPercentile: record.weight !== null
-          ? calculatePercentile(record.weight, ageInMonths, getWeightTable())
-          : null,
-        heightPercentile: record.height !== null
-          ? calculatePercentile(record.height, ageInMonths, getHeightTable())
-          : null,
-        headPercentile: record.headCircumference !== null
-          ? calculatePercentile(record.headCircumference, ageInMonths, getHeadTable())
-          : null,
-      };
-    });
-  }, [getAgeInMonths, getWeightTable, getHeightTable, getHeadTable]);
-
-  const loadRecords = useCallback(async () => {
-    if (!userId || !babyId) {
+    if (!userId || !babyId || !birthDate) {
       setIsLoading(false);
       return;
     }
+
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const raw = await getGrowthRecords(userId, babyId);
+        setRecords(enrichRecords(raw, birthDate, gender));
+      } catch {
+        setError('No se pudieron cargar los registros.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
+  }, [babyId, userId, birthDate, gender]);
+
+  // Datos derivados
+  const latestWeight = records.findLast((r) => r.weight !== null)?.weight ?? null;
+  const latestHeight = records.findLast((r) => r.height !== null)?.height ?? null;
+  const latestHead = records.findLast((r) => r.headCircumference !== null)?.headCircumference ?? null;
+
+  const weightChartData = buildChartData(records, (r) => r.weight, getWeightTable(gender));
+  const heightChartData = buildChartData(records, (r) => r.height, getHeightTable(gender));
+  const headChartData = buildChartData(records, (r) => r.headCircumference, getHeadTable(gender));
+
+  const refreshRecords = useCallback(async () => {
+    if (!userId || !babyId || !birthDate) return;
     try {
       setIsLoading(true);
-      setError(null);
       const raw = await getGrowthRecords(userId, babyId);
-
-      setRecords(enrichRecords(raw));
+      setRecords(enrichRecords(raw, birthDate, gender));
     } catch {
       setError('No se pudieron cargar los registros.');
     } finally {
       setIsLoading(false);
     }
-  }, [userId, babyId, enrichRecords]);
-
-  useEffect(() => {
-    setRecords([]);
-    loadRecords();
-  }, [loadRecords]);
-
-
-  const latestWeight = records.findLast((r) => r.weight !== null)?.weight ?? null;
-  const latestHeight = records.findLast((r) => r.height !== null)?.height ?? null;
-  const latestHead = records.findLast((r) => r.headCircumference !== null)?.headCircumference ?? null;
-
-  const buildChartData = useCallback((
-    getValue: (r: GrowthRecordWithPercentile) => number | null,
-    table: ReturnType<typeof getWeightTable>
-  ): GrowthChartData => {
-    const babyData: ChartDataPoint[] = records
-      .filter((r) => getValue(r) !== null)
-      .map((r) => ({ x: r.ageInMonths, y: getValue(r) as number }));
-
-    const p3: ChartDataPoint[] = table.map((d) => ({ x: d.month, y: d.p3 }));
-    const p50: ChartDataPoint[] = table.map((d) => ({ x: d.month, y: d.p50 }));
-    const p97: ChartDataPoint[] = table.map((d) => ({ x: d.month, y: d.p97 }));
-
-    return { babyData, p3, p50, p97 };
-  }, [records]);
-
-  const weightChartData = buildChartData((r) => r.weight, getWeightTable());
-  const heightChartData = buildChartData((r) => r.height, getHeightTable());
-  const headChartData = buildChartData((r) => r.headCircumference, getHeadTable());
-
+  }, [userId, babyId, birthDate, gender]);
 
   const handleAddRecord = async (record: CreateGrowthRecord): Promise<void> => {
-    if (!userId || !babyId) return;
-
-
+    if (!userId || !babyId || !birthDate) return;
     try {
       const created = await addGrowthRecord(userId, babyId, record);
-      const enriched = enrichRecords([created])[0];
+      const enriched = enrichRecords([created], birthDate, gender)[0];
       setRecords((prev) =>
         [...prev, enriched].sort((a, b) => a.date.getTime() - b.date.getTime())
       );
     } catch {
-
-
       setError('No se pudo guardar el registro.');
     }
   };
@@ -181,7 +195,7 @@ export const useGrowth = (
     if (!userId || !babyId) return;
     try {
       await updateGrowthRecord(userId, babyId, id, record);
-      await loadRecords();
+      await refreshRecords();
     } catch {
       setError('No se pudo actualizar el registro.');
     }
@@ -210,6 +224,6 @@ export const useGrowth = (
     handleAddRecord,
     handleUpdateRecord,
     handleDeleteRecord,
-    refreshRecords: loadRecords,
+    refreshRecords,
   };
 };
