@@ -1,14 +1,12 @@
 # Bebio — Monitoreo del Desarrollo Infantil
 
-Aplicación móvil para el seguimiento inteligente del desarrollo de bebés en los primeros 24 meses de vida.
+Aplicación móvil para el seguimiento inteligente del desarrollo de bebés en las primeras etapas de vida.
 
 ---
 
 ## Descripción
 
 Bebio es una app móvil desarrollada con React Native + Expo que permite a los padres registrar y visualizar el crecimiento de sus bebés, gestionar el esquema de vacunación del PAI Colombia, y consultar un asistente de inteligencia artificial con contexto real del bebé.
-
-> Proyecto universitario — Computación Móvil, Universidad de Antioquia 2026.
 
 ---
 
