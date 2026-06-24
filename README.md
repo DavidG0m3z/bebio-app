@@ -211,10 +211,7 @@ Checkout → Instalar dependencias → Lint → Validar tipos → Expo Doctor
 
 ## Autor
 
-**David Ardila**
+**David Ardila Gomez**
 Estudiante de Ingeniería de Sistemas — Universidad de Antioquia
 
 ---
-
-> Cuando el diagrama de arquitectura esté listo, agregar la imagen aquí:
-> `![Arquitectura Bebio](./assets/diagrama-arquitectura.png)`
